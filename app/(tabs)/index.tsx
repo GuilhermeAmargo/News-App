@@ -17,7 +17,7 @@ import * as Animatable from 'react-native-animatable';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CATEGORIES = ['general', 'technology', 'sports', 'business', 'science'];
+const CATEGORIES = ['general', 'technology', 'sports', 'business', 'science', 'health'];
 const NEWS_API_KEY = '04713b9e088c40ad9fee47bf50f925d8';
 
 export default function NewsFeed() {
@@ -158,7 +158,8 @@ export default function NewsFeed() {
           📰 Latest News
         </Text>
 
-        <View style={styles.categoryContainer}>
+      <View style={styles.filterGroup}>
+        <View style={styles.categoryGroup}>
           {CATEGORIES.map(cat => (
             <TouchableOpacity
               key={cat}
@@ -178,6 +179,7 @@ export default function NewsFeed() {
               </Text>
             </TouchableOpacity>
           ))}
+          </View>
 
           {/* Botão de Favoritos com estilo exclusivo */}
           <TouchableOpacity
@@ -254,12 +256,28 @@ const styles = StyleSheet.create({
     paddingTop: 16, 
     paddingHorizontal: 16 
   },
+  filterGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    marginBottom: 12,
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  categoryGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    flex: 1,
+    rowGap: 8,
+    columnGap: 8,
+    marginRight: 8,
+  },
   header: { 
     fontSize: 24, 
     fontWeight: 'bold', 
     marginBottom: 12,
     marginTop: 15, 
-    color: '#333' 
+    color: '#333'
   },
   categoryContainer: { 
     flexDirection: 'row', 
