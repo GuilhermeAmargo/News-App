@@ -66,21 +66,6 @@ export default function About() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.button, isDark && styles.buttonDark]}
-          onPress={() => openLink('https://github.com/seu-usuario/seu-repositorio')}
-          activeOpacity={0.8}
-        >
-          <Icon
-            name="logo-github"
-            size={20}
-            color={isDark ? '#fff' : '#000'}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={[styles.buttonText, isDark && styles.textLight]}>
-            View Source on GitHub
-          </Text>
-        </TouchableOpacity>
 
       </View>
     </ScrollView>
