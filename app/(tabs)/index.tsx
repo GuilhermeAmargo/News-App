@@ -257,7 +257,8 @@ const styles = StyleSheet.create({
   header: { 
     fontSize: 24, 
     fontWeight: 'bold', 
-    marginBottom: 12, 
+    marginBottom: 12,
+    marginTop: 15, 
     color: '#333' 
   },
   categoryContainer: { 
