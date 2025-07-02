@@ -25,32 +25,33 @@ export default function NewsFeed() {
   const [filteredArticles, setFilteredArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [category, setCategory] = useState('general');
   const [showingFavorites, setShowingFavorites] = useState(false);
-
   const isDark = useColorScheme() === 'dark';
+
+  useEffect(() => {
+    fetchNews();
+    loadFavorites();
+  }, []);
 
   const fetchNews = async (selectedCategory = category) => {
     setLoading(true);
-    const url = `https://newsapi.org/v2/top-headlines?country=us&category=${selectedCategory}&apiKey=${NEWS_API_KEY}`;
     try {
-      const response = await fetch(url);
+      const response = await fetch(
+        `https://newsapi.org/v2/top-headlines?country=us&category=${selectedCategory}&apiKey=${NEWS_API_KEY}`
+      );
       const json = await response.json();
-      if (json.status === 'ok' && json.articles) {
+      if (json.status === 'ok') {
         const sorted = json.articles.sort(
           (a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)
         );
         setArticles(sorted);
         filterArticles(search, showingFavorites, sorted, favorites);
-      } else {
-        setError('No news found.');
       }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to fetch news.');
+    } catch {
+      setFilteredArticles([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -62,8 +63,8 @@ export default function NewsFeed() {
     if (stored) setFavorites(JSON.parse(stored));
   };
 
-  const saveFavorites = async (newFavs) => {
-    await AsyncStorage.setItem('favorites', JSON.stringify(newFavs));
+  const saveFavorites = async (favs) => {
+    await AsyncStorage.setItem('favorites', JSON.stringify(favs));
   };
 
   const handleSearch = (text) => {
@@ -71,25 +72,11 @@ export default function NewsFeed() {
     filterArticles(text, showingFavorites, articles, favorites);
   };
 
-  const filterArticles = (
-    searchText,
-    onlyFavorites,
-    baseArticles = articles,
-    favList = favorites
-  ) => {
-    let data = baseArticles;
-
-    if (onlyFavorites) {
-      data = data.filter(item => favList.includes(item.url));
-    }
-
-    if (searchText) {
-      data = data.filter(item =>
-        item.title?.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
-    setFilteredArticles(data);
+  const filterArticles = (text, onlyFavs, base = articles, favs = favorites) => {
+    let result = base;
+    if (onlyFavs) result = result.filter(item => favs.includes(item.url));
+    if (text) result = result.filter(item => item.title?.toLowerCase().includes(text.toLowerCase()));
+    setFilteredArticles(result);
   };
 
   const toggleFavorite = async (url) => {
@@ -101,47 +88,31 @@ export default function NewsFeed() {
     filterArticles(search, showingFavorites, articles, updated);
   };
 
-  const onCategoryChange = async (cat) => {
-    setCategory(cat);
-    setSearch('');
-    await fetchNews(cat);
-  };
-
-  const toggleFavoritesView = () => {
-    const newState = !showingFavorites;
-    setShowingFavorites(newState);
-    filterArticles(search, newState, articles, favorites);
-  };
-
-  useEffect(() => {
-    fetchNews();
-    loadFavorites();
-  }, []);
-
   const renderItem = ({ item, index }) => (
-    <Animatable.View animation="fadeInUp" delay={index * 80} useNativeDriver>
+    <Animatable.View animation="fadeInUp" delay={index * 60} useNativeDriver>
       <TouchableOpacity
         style={[styles.card, isDark && styles.cardDark]}
         onPress={() => Linking.openURL(item.url)}
-        activeOpacity={0.8}
       >
         {item.urlToImage && (
           <Image source={{ uri: item.urlToImage }} style={styles.image} />
         )}
         <View style={styles.content}>
-          <Text style={[styles.title, isDark && styles.textDark]}>{item.title}</Text>
+          <Text style={[styles.title, isDark && styles.textDark]}>
+            {item.title}
+          </Text>
           {item.description && (
             <Text style={[styles.description, isDark && styles.textDark]}>
               {item.description}
             </Text>
           )}
           <View style={styles.footer}>
-            <Text style={styles.source}>Fonte: {item.source.name}</Text>
+            <Text style={styles.source}>{item.source.name}</Text>
             <TouchableOpacity onPress={() => toggleFavorite(item.url)}>
               <Icon
-                name={favorites.includes(item.url) ? 'bookmark' : 'bookmark-outline'}
-                size={20}
-                color={favorites.includes(item.url) ? '#f39c12' : '#888'}
+                name={favorites.includes(item.url) ? 'heart' : 'heart-outline'}
+                size={22}
+                color={favorites.includes(item.url) ? '#e74c3c' : '#888'}
               />
             </TouchableOpacity>
           </View>
@@ -154,71 +125,81 @@ export default function NewsFeed() {
     <View style={[styles.container, isDark && styles.containerDark]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.headerContainer}>
-        <Text style={[styles.header, isDark && styles.textLight]}>
-          📰 Latest News
-        </Text>
+        <Text style={[styles.header, isDark && styles.textLight]}>📰 Today's Highlights</Text>
 
-      <View style={styles.filterGroup}>
-        <View style={styles.categoryGroup}>
-          {CATEGORIES.map(cat => (
+        <View style={[styles.searchBar, isDark && styles.searchBarDark]}>
+          <Icon name="search-outline" size={20} color={isDark ? '#ccc' : '#666'} />
+          <TextInput
+            style={[styles.searchInput, isDark && styles.searchInputDark]}
+            placeholder="Search articles..."
+            placeholderTextColor={isDark ? '#aaa' : '#666'}
+            value={search}
+            onChangeText={handleSearch}
+          />
+        </View>
+
+        <FlatList
+          data={CATEGORIES}
+          keyExtractor={(item) => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 10 }}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              key={cat}
-              onPress={() => onCategoryChange(cat)}
+              onPress={() => {
+                setCategory(item);
+                fetchNews(item);
+              }}
               style={[
                 styles.categoryButton,
-                cat === category && styles.categoryButtonActive,
+                isDark && styles.categoryButtonDark,
+                category === item && styles.categoryButtonActive,
+                category === item && isDark && styles.categoryButtonActiveDark,
               ]}
             >
               <Text
                 style={[
                   styles.categoryText,
-                  cat === category && styles.categoryTextActive,
+                  isDark && styles.categoryTextDark,
+                  category === item && styles.categoryTextActive,
                 ]}
               >
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {item.toUpperCase()}
               </Text>
             </TouchableOpacity>
-          ))}
-          </View>
-
-          {/* Botão de Favoritos com estilo exclusivo */}
-          <TouchableOpacity
-            onPress={toggleFavoritesView}
-            style={[
-              styles.favoritesButton,
-              showingFavorites && styles.favoritesButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.favoritesText,
-                showingFavorites && styles.favoritesTextActive,
-              ]}
-            >
-              ⭐ Favorites
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <TextInput
-          style={[styles.searchInput, isDark && styles.searchInputDark]}
-          placeholder="Search news..."
-          placeholderTextColor={isDark ? '#aaa' : '#666'}
-          value={search}
-          onChangeText={handleSearch}
+          )}
         />
+
+        {/* Botão de favoritos mais para baixo */}
+        <TouchableOpacity
+          onPress={() => {
+            setShowingFavorites(!showingFavorites);
+            filterArticles(search, !showingFavorites, articles, favorites);
+          }}
+          style={[styles.favButton, isDark && styles.favButtonDark, showingFavorites && styles.favButtonActive, showingFavorites && isDark && styles.favButtonActiveDark,]}
+        >
+        <Icon
+          name={showingFavorites ? 'bookmark' : 'bookmark-outline'}
+          size={20}
+          color={
+            showingFavorites
+              ? '#fff'
+              : isDark
+              ? '#ccc'
+              : '#007aff'
+          }
+        />
+        </TouchableOpacity>
       </View>
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#007aff" />
-          <Text style={{ marginTop: 8, color: '#555' }}>Loading...</Text>
+          <Text style={{ marginTop: 8, color: isDark ? '#ccc' : '#444' }}>Loading...</Text>
         </View>
       ) : filteredArticles.length === 0 ? (
         <View style={styles.center}>
-          <Text style={{ color: isDark ? '#ccc' : '#333' }}>
-            No news found.
-          </Text>
+          <Text style={{ color: isDark ? '#ccc' : '#333' }}>No articles found.</Text>
         </View>
       ) : (
         <FlatList
@@ -226,7 +207,6 @@ export default function NewsFeed() {
           keyExtractor={(item, index) => item.url + index.toString()}
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16 }}
-          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -245,150 +225,89 @@ export default function NewsFeed() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#f9f9f9' 
-  },
-  containerDark: { 
-    backgroundColor: '#1c1c1e' 
-  },
-  headerContainer: { 
-    paddingTop: 16, 
-    paddingHorizontal: 16 
-  },
-  filterGroup: {
+  container: { flex: 1, backgroundColor: '#f2f4f6' },
+  containerDark: { backgroundColor: '#1c1c1e' },
+  headerContainer: { padding: 16, paddingTop: 28 },
+  header: { fontSize: 26, fontWeight: 'bold', marginBottom: 12, color: '#222' },
+  textDark: { color: '#eee' },
+  textLight: { color: '#fff' },
+  searchBar: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    marginBottom: 12,
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  categoryGroup: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    flex: 1,
-    rowGap: 8,
-    columnGap: 8,
-    marginRight: 8,
-  },
-  header: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginBottom: 12,
-    marginTop: 15, 
-    color: '#333'
-  },
-  categoryContainer: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    marginBottom: 12 
-  },
-  categoryButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#e0e0e0',
     borderRadius: 12,
-    marginRight: 8,
-    marginBottom: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    backgroundColor: '#ececec',
   },
-  categoryButtonActive: { 
-    backgroundColor: '#007aff' 
-  },
-  categoryText: { 
-    fontSize: 12, 
-    color: '#333' 
-  },
-  categoryTextActive: { 
-    color: '#fff' 
+  searchBarDark: {
+    backgroundColor: '#2a2a2c',
   },
   searchInput: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
+    flex: 1,
     fontSize: 14,
-    marginBottom: 12,
-    color: '#000',
+    paddingVertical: 8,
+    marginLeft: 8,
+    color: '#333',
   },
-  favoritesButton: { 
-    paddingHorizontal: 10, 
-    paddingVertical: 6, 
-    backgroundColor: '#FEFDE0', 
-    borderRadius: 12, 
-    marginRight: 8, 
-    marginBottom: 8, 
-    borderWidth: 1, 
-    borderColor: '#e5c100' 
+  searchInputDark: {
+    color: '#fff',
   },
-  favoritesButtonActive: { 
-    backgroundColor: '#ffa500', 
-    borderColor: '#e59400' 
+  categoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#ddd',
+    borderRadius: 20,
+    marginRight: 10,
   },
-  favoritesText: { 
-    fontSize: 12, 
-    color: '#333', 
-    fontWeight: 'bold' 
+  categoryButtonDark: {
+    backgroundColor: '#3a3a3c'
   },
-  favoritesTextActive: { 
-    color: '#fff' 
+  categoryButtonActive: {
+    backgroundColor: '#007aff',
   },
-  searchInputDark: { 
-    backgroundColor: '#3a3a3c', 
-    color: '#fff' 
+  categoryButtonActiveDark: {
+  backgroundColor: '#0a84ff',
+  },
+  categoryText: { fontSize: 12, color: '#333' },
+  categoryTextDark: { color: '#eee' },
+  categoryTextActive: { color: '#fff', fontWeight: 'bold' },
+  favButton: {
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 30,
+    borderColor: '#007aff',
+    borderWidth: 1,
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  favButtonDark: {
+    backgroundColor: '#3a3a3c',
+    borderColor: '#0a84ff'
+  },
+  favButtonActive: {
+    backgroundColor: '#007aff',
+  },
+  favButtonActiveDark: {
+    backgroundColor: '#0a84ff'
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginBottom: 16,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
+    marginBottom: 16,
     elevation: 5,
   },
-  cardDark: { 
-    backgroundColor: '#2c2c2e' 
-  },
-  image: { 
-    height: 180, 
-    width: '100%' 
-  },
-  content: { 
-    padding: 12 
-  },
-  title: { 
-    fontWeight: 'bold', 
-    fontSize: 16, 
-    marginBottom: 6, 
-    color: '#222' 
-  },
-  description: { 
-    color: '#555', 
-    fontSize: 14, 
-    marginBottom: 8 
-  },
-  source: { 
-    fontSize: 12, 
-    color: '#888', 
-    fontStyle: 'italic'
-  },
-  textDark: { 
-    color: '#eee' 
-  },
-  textLight: { 
-    color: '#fff' 
-  },
-  center: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
+  cardDark: { backgroundColor: '#2c2c2e' },
+  image: { width: '100%', height: 180 },
+  content: { padding: 14 },
+  title: { fontWeight: 'bold', fontSize: 16, marginBottom: 6 },
+  description: { color: '#555', fontSize: 14 },
   footer: {
-    marginTop: 8,
+    marginTop: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  source: { fontSize: 12, color: '#777' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
