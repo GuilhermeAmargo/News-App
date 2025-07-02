@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 export default function About() {
   const isDark = useColorScheme() === 'dark';
 
-  const openLink = (url) => {
+  const openLink = (url: string) => {
     Linking.openURL(url);
   };
 
@@ -30,7 +30,8 @@ export default function About() {
         </Text>
 
         <Text style={[styles.text, isDark && styles.textLight]}>
-          This app was developed to provide the latest news across various categories such as technology, sports, business, and science.
+          This app was developed to provide the latest news across various
+          categories such as technology, sports, business, and science.
         </Text>
 
         <View style={styles.section}>
@@ -50,12 +51,13 @@ export default function About() {
             Technologies Used
           </Text>
           <Text style={[styles.text, isDark && styles.textLight]}>
-            • React Native{'\n'}
+            • Expo{'\n'}
             • NewsAPI.org{'\n'}
             • AsyncStorage for favorites{'\n'}
             • react-native-animatable for animations
           </Text>
         </View>
+
 
         <View style={styles.section}>
           <Text style={[styles.subtitle, isDark && styles.textLight]}>
@@ -65,7 +67,6 @@ export default function About() {
             Guilherme Camargo
           </Text>
         </View>
-
 
       </View>
     </ScrollView>
@@ -87,21 +88,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 25,
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 15,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
     elevation: 10,
   },
   cardDark: {
     backgroundColor: '#1f1f1f',
-    shadowOpacity: 0.25,
   },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: '900',
     marginBottom: 20,
-    color: '#222',
     textAlign: 'center',
+    color: '#222',
   },
   subtitle: {
     fontSize: 22,
@@ -118,36 +118,34 @@ const styles = StyleSheet.create({
     color: '#ddd',
   },
   section: {
-    marginTop: 20,
+    marginTop: 25,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffd54f',
+    backgroundColor: '#007aff',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 30,
-    marginTop: 30,
+    borderRadius: 25,
+    marginTop: 35,
     alignSelf: 'center',
-    shadowColor: '#ffaa00',
-    shadowOpacity: 0.6,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 10,
-    elevation: 8,
+    shadowColor: '#007aff',
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 8,
+    elevation: 6,
   },
   buttonDark: {
-    backgroundColor: '#ffaa00',
-    shadowColor: '#cc8800',
+    backgroundColor: '#ffd700',
+    shadowColor: '#ffaa00',
   },
   buttonText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: 17,
+    fontWeight: '600',
   },
   version: {
-    marginTop: 40,
+    marginTop: 35,
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
   },
 });
